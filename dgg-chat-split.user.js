@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         DGG Multichat - Chat Split View
 // @namespace    https://github.com/RadiantSol/DGGMultichat
-// @version      1.0.0
-// @description  Split view: DGG chat + Kick stream chat side-by-side on destiny.gg/bigscreen (when URL is #kick/username). Resizable panel, no backend.
+// @version      1.1.0
+// @description  Split view: DGG chat + stream chat (Kick or YouTube) side-by-side on destiny.gg/bigscreen. Use #kick/username or #youtube/VIDEO_ID. Resizable panel, no backend.
 // @author       RadiantSol
 // @license      MIT
 // @supportURL   https://github.com/RadiantSol/DGGMultichat/issues
@@ -25,11 +25,13 @@
     const STORAGE_KEY = 'dgg-kick-chat-width';
     const COLLAPSED_KEY = 'dgg-kick-chat-collapsed';
 
-    function getKickSlugFromPath() {
+    /** @returns {{ type: 'kick', id: string } | { type: 'youtube', id: string } | null} */
+    function getEmbedFromPath() {
         const hash = window.location.hash.slice(1).trim();
         if (!hash) return null;
         const segments = hash.split('/').filter(Boolean);
-        if (segments[0] === 'kick' && segments[1]) return segments[1];
+        if (segments[0] === 'kick' && segments[1]) return { type: 'kick', id: segments[1] };
+        if (segments[0] === 'youtube' && segments[1]) return { type: 'youtube', id: segments[1] };
         return null;
     }
 
@@ -157,15 +159,15 @@
             panel.style.width = COLLAPSED_WIDTH + 'px';
             document.documentElement.style.setProperty('--dgg-kick-panel-width', '0');
             toggle.textContent = '\u25B6';
-            toggle.title = 'Expand Kick chat';
-            toggle.setAttribute('aria-label', 'Expand Kick chat');
+            toggle.title = 'Expand stream chat';
+            toggle.setAttribute('aria-label', 'Expand stream chat');
         } else {
             panel.classList.remove('dgg-kick-collapsed');
             panel.style.width = getStoredWidth() + 'px';
             document.documentElement.style.setProperty('--dgg-kick-panel-width', getStoredWidth() + 'px');
             toggle.textContent = '\u25C0';
-            toggle.title = 'Collapse Kick chat';
-            toggle.setAttribute('aria-label', 'Collapse Kick chat');
+            toggle.title = 'Collapse stream chat';
+            toggle.setAttribute('aria-label', 'Collapse stream chat');
         }
     }
 
@@ -205,14 +207,34 @@
         });
     }
 
-    function showKickPanel() {
-        const slug = getKickSlugFromPath();
-        if (!slug) return;
+    function getChatIframeSrc(embed) {
+        if (embed.type === 'kick') {
+            return 'https://kick.com/popout/' + embed.id + '/chat';
+        }
+        if (embed.type === 'youtube') {
+            const domain = window.location.hostname || 'www.destiny.gg';
+            return 'https://www.youtube.com/live_chat?v=' + encodeURIComponent(embed.id) + '&embed_domain=' + encodeURIComponent(domain);
+        }
+        return '';
+    }
+
+    function getChatIframeTitle(embed) {
+        if (embed.type === 'kick') return 'Kick chat: ' + embed.id;
+        if (embed.type === 'youtube') return 'YouTube live chat: ' + embed.id;
+        return 'Stream chat';
+    }
+
+    function showStreamPanel() {
+        const embed = getEmbedFromPath();
+        if (!embed) return;
 
         let panel = document.getElementById(PANEL_ID);
         if (panel) {
             const iframe = panel.querySelector('iframe');
-            if (iframe) iframe.src = 'https://kick.com/popout/' + slug + '/chat';
+            if (iframe) {
+                iframe.src = getChatIframeSrc(embed);
+                iframe.title = getChatIframeTitle(embed);
+            }
             return;
         }
 
@@ -224,17 +246,17 @@
         const toggle = document.createElement('button');
         toggle.id = TOGGLE_ID;
         toggle.type = 'button';
-        toggle.title = 'Collapse Kick chat';
+        toggle.title = 'Collapse stream chat';
         toggle.textContent = '\u25C0';
-        toggle.setAttribute('aria-label', 'Collapse Kick chat');
+        toggle.setAttribute('aria-label', 'Collapse stream chat');
 
         const handle = document.createElement('div');
         handle.id = HANDLE_ID;
         handle.title = 'Drag to resize';
 
         const iframe = document.createElement('iframe');
-        iframe.src = 'https://kick.com/popout/' + slug + '/chat';
-        iframe.title = 'Kick chat: ' + slug;
+        iframe.src = getChatIframeSrc(embed);
+        iframe.title = getChatIframeTitle(embed);
 
         panel.appendChild(toggle);
         panel.appendChild(handle);
@@ -245,28 +267,27 @@
         applyCollapsedState(panel, getStoredCollapsed());
     }
 
-    function removeKickPanel() {
+    function removeStreamPanel() {
         const panel = document.getElementById(PANEL_ID);
         if (panel) panel.remove();
         document.documentElement.style.removeProperty('--dgg-kick-panel-width');
     }
 
     function init() {
-        if (getKickSlugFromPath()) {
-            showKickPanel();
+        if (getEmbedFromPath()) {
+            showStreamPanel();
         } else {
-            removeKickPanel();
+            removeStreamPanel();
         }
     }
 
     init();
 
     window.addEventListener('hashchange', function () {
-        const slug = getKickSlugFromPath();
-        if (slug) {
-            showKickPanel();
+        if (getEmbedFromPath()) {
+            showStreamPanel();
         } else {
-            removeKickPanel();
+            removeStreamPanel();
         }
     });
 })();
