@@ -2,7 +2,10 @@
 // @name         DGG Multichat - Chat Split View
 // @namespace    https://github.com/RadiantSol/DGGMultichat
 // @version      1.0.0
-// @description  Shows embedded chat in a resizable panel to the side of destiny.gg/bigscreen
+// @description  Split view: DGG chat + Kick stream chat side-by-side on destiny.gg/bigscreen (when URL is #kick/username). Resizable panel, no backend.
+// @author       RadiantSol
+// @license      MIT
+// @supportURL   https://github.com/RadiantSol/DGGMultichat/issues
 // @match        https://www.destiny.gg/bigscreen*
 // @run-at       document-idle
 // @grant        none
