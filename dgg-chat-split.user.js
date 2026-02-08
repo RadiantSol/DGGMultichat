@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         DGG Bigscreen - Kick Chat Split View
-// @namespace    https://github.com/
+// @name         DGG Multichat - Chat Split View
+// @namespace    https://github.com/RadiantSol/DGGMultichat
 // @version      1.0.0
-// @description  Shows Kick chat in a resizable panel to the side of destiny.gg/bigscreen
+// @description  Shows embedded chat in a resizable panel to the side of destiny.gg/bigscreen
 // @match        https://www.destiny.gg/bigscreen*
 // @run-at       document-idle
 // @grant        none
